@@ -289,6 +289,7 @@ class Parser(object):
     def _validate_arguments(self, data, validators):
         for validator in validators:
             if validator(data) is False:
+                # 返回 False 则抛出 ValidationError 异常
                 msg = self.DEFAULT_VALIDATION_MESSAGE
                 raise ValidationError(msg, data=data)
 
@@ -338,6 +339,10 @@ class Parser(object):
         :param callable validate: Validation function or list of validation functions
             that receives the dictionary of parsed arguments. Validator either returns a
             boolean or raises a :exc:`ValidationError`.
+
+            一个验证函数或一组验证函数队列，可以接收解析好的参数的字典。验证器可以返回布尔值
+            或抛出一个 :exc:`ValidationError` 异常。
+
         :param int error_status_code: Status code passed to error handler functions when
             a `ValidationError` is raised.
         :param dict error_headers: Headers passed to error handler functions when a
@@ -348,15 +353,16 @@ class Parser(object):
         req = req if req is not None else self.get_default_request()
         assert req is not None, "Must pass req object"
         data = None
-        validators = _ensure_list_of_callables(validate)
+        validators = _ensure_list_of_callables(validate)  # 确定是队列还是可调用的函数
         schema = self._get_schema(argmap, req)
         try:
+            # 解析请求
             parsed = self._parse_request(
                 schema=schema, req=req, locations=locations or self.locations
             )
             result = schema.load(parsed)
             data = result.data if MARSHMALLOW_VERSION_INFO[0] < 3 else result
-            self._validate_arguments(data, validators)
+            self._validate_arguments(data, validators)  # 验证参数
         except ma.exceptions.ValidationError as error:
             self._on_validation_error(
                 error, req, schema, error_status_code, error_headers
