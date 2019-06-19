@@ -49,6 +49,7 @@ class DelimitedList(ma.fields.List):
     :param bool as_string: Dump values to string.
     """
 
+    # 分隔符
     delimiter = ","
 
     def __init__(self, cls_or_instance, delimiter=None, as_string=False, **kwargs):
@@ -57,12 +58,14 @@ class DelimitedList(ma.fields.List):
         super(DelimitedList, self).__init__(cls_or_instance, **kwargs)
 
     def _serialize(self, value, attr, obj):
+        """override，序列化"""
         ret = super(DelimitedList, self)._serialize(value, attr, obj)
         if self.as_string:
             return self.delimiter.join(format(each) for each in ret)
         return ret
 
     def _deserialize(self, value, attr, data):
+        """override，反序列化"""
         try:
             ret = (
                 value
